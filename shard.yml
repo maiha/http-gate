@@ -1,0 +1,28 @@
+name: http-gate
+version: 0.1.0
+
+authors:
+  - maiha <maiha@wota.jp>
+
+targets:
+  http-gate:
+    main: src/bin/http-gate.cr
+
+dependencies:
+  radix:
+    github: luislavena/radix
+    version: ">= 0.3.8"
+  pretty:
+    github: maiha/pretty.cr
+    version: ">= 0.6.5"
+  var:
+    github: maiha/var.cr
+    version: ">= 1.1.0"
+  opts:
+    github: maiha/opts.cr
+    version: ">= 0.6.0"
+  toml-config:
+    github: maiha/toml-config.cr
+    version: ">= 0.4.0"
+
+license: MIT
