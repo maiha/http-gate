@@ -24,13 +24,14 @@ class Gate::Back
     ctx.response.content_type = content_type_with_charset(res)
 
     ctx.response.print res.body
+
+  rescue err : Exception
+    logger.info("< 500 (#{err})", name) if config.verbose?
+    logger.warn(err.to_s, name)
+    ctx.response.respond_with_error(err.to_s)
+  ensure
     ctx.response.flush
     ctx.response.close
-    
-  rescue IO::EOFError
-    logger.warn("disconnected", name)
-  rescue err : Exception
-    logger.error(err.to_s, name)
   end
 
   private def content_type_with_charset(res) : String
