@@ -1,32 +1,22 @@
 require "./spec_helper"
 
-private def redis_back
-  Gate::Back.new.tap{|s|
-    s.path = "/redis"
-    s.port = 6379
-  }
-end
-
-private def default_back
-  Gate::Back.new.tap{|s|
-    s.path = "/"
-    s.port = 8080
-  }
+private macro config
+  Gate::Config.parse_file(File.join(__DIR__, "../config/config.toml"))
 end
 
 private macro resolve(path, back)
   it "'{{path.id}}' as '{{back.id}}'" do
     front = Gate::Front.new
-    front.backs = [redis_back, default_back]
+    front.backs = config.backs
     front.resolve?({{path}}).to_s.should eq({{back}})
   end
 end
 
 describe Gate::Front do
   describe "resolves" do
-    resolve "/redis"  , "127.0.0.1:6379"
-    resolve "/redis/x", "127.0.0.1:6379"
-    resolve "/foo"    , "127.0.0.1:8080"
-    resolve ""        , ""
+    resolve "/clickhouse"   , "127.0.0.1:8123"
+    resolve "/clickhouse/?" , "127.0.0.1:8123"
+    resolve "/foo"          , "127.0.0.1:9001"
+    resolve ""              , "127.0.0.1:9001"
   end
 end

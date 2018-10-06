@@ -18,20 +18,20 @@ class HttpGate
   option version : Bool  , "--version", "Print the version and exit", false
   option help    : Bool  , "--help"   , "Output this help and exit" , false
 
-  var logger : Logger = build_logger
+  var logger : Logger = Logger.new(STDOUT)
   
   def run
     config = load_config
-    if verbose
-      config.verbose = true
-      logger.level = Logger::DEBUG
-    end
+    config.verbose = true if verbose
+    self.logger = config.build_logger
+    logger.formatter = build_logger_formatter
 
     front = Gate::Front.new
     front.logger = logger
+    front.config = config
     front.host   = config.front_host?
     front.port   = config.front_port?
-    front.backs  = config.backs
+    front.backs  = config.backs.tap(&.map(&.config = config))
     front.run
   end     
 
@@ -41,16 +41,14 @@ class HttpGate
     raise Gate::Abort.new("No such config file '#{config_path}'")
   end
 
-  private def build_logger : Logger
-    logger = Logger.new(STDOUT)
-    logger.formatter = Logger::Formatter.new do |level, time, prog, mes, io|
+  private def build_logger_formatter
+    Logger::Formatter.new do |level, time, prog, mes, io|
       mark = level.to_s[0]
-      # prog = prog.sub(/[a-z]+/, "") # "Back#1" => "B#1"
+      prog = prog.sub(/[a-z]+/, "").sub(/^.*(\d+)$/, "\\1") # "Back#1" => "1"
       time = time.to_s("%H:%M:%S")
-      io << mark << " [" << time << "] " << prog << " " << mes
-      # I [20:15:59] Front ...
+      io << mark << " [" << time << "] " << prog << ' ' << mes
+      # I [20:15:59] F ...
     end
-    return logger
   end
 
   def on_error(err)

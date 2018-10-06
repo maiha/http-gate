@@ -4,6 +4,9 @@ class Gate::Front
   var resolver : Radix::Tree(Back) = Radix::Tree(Back).new
   var logger   : Logger = Logger.new(nil)
   var name     : String = "Front"
+  var config   : Config
+  
+  include Helper
 
   def backs=(backs : Array(Back))
     self.resolver = Radix::Tree(Back).new
@@ -37,10 +40,10 @@ class Gate::Front
   end
 
   private def do_process(ctx)
-    logger.debug("process: %s" % ctx.request.path, name)
+    logger.info("> %s" % inspect_req(ctx.request), name) if config.verbose?
     req = ctx.request
     if back = resolve?(req.path)
-      logger.debug("Back found: #{back}", name)
+      # logger.debug("Back found: #{back}", name)
       back.process(ctx)
     else
       logger.warn("Back not found: '#{req.path}'", name)

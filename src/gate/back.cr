@@ -1,6 +1,4 @@
 class Gate::Back
-  include Helper
-
   var path : String
   var name : String = "Back"
   var host : String = "127.0.0.1"
@@ -8,14 +6,14 @@ class Gate::Back
 
   var remove_path : Bool   = false
   var logger      : Logger = Logger.new(nil)
+  var config      : Config
+
+  include Helper
 
   def process(ctx : HTTP::Server::Context)
     req = ctx.request
-    original_path = req.path
-    if remove_path
-      req.path = req.path.sub(/\A#{path}/, "")
-    end
-    log_request(req, original_path)
+    req.path = req.path.sub(/\A#{path}/, "") if remove_path
+    log_request(req)
 
     http = HTTP::Client.new(host, port)
     res  = http.exec(req)
@@ -23,40 +21,43 @@ class Gate::Back
 
     ctx.response.headers.merge!(res.headers)
     ctx.response.status_code = res.status_code
-    if v = res.content_type
-      ctx.response.content_type = v
-    end
-    ctx.response.print res.body
+    ctx.response.content_type = content_type_with_charset(res)
 
+    ctx.response.print res.body
+    ctx.response.flush
+    ctx.response.close
+    
   rescue IO::EOFError
     logger.warn("disconnected", name)
   rescue err : Exception
     logger.error(err.to_s, name)
   end
 
-  private def log_request(req, original_path)
-    msg = String.build do |s|
-      s << "> %s" % inspect_req(req)
-      s << " (via '%s')" % original_path if req.path != original_path
+  private def content_type_with_charset(res) : String
+    String.build do |s|
+      if v = res.content_type
+        s << v
+        if v = res.charset
+          s << "; charset=" << v
+        end
+      end
     end
-    logger.info(msg, name)
+  end
+  
+  private def log_request(req)
+    logger.info("> %s" % inspect_req(req), name)
     logger.debug(req.headers.inspect, name)
-#    logger.debug(req.body, name)
   end
   
   private def log_response(res)
-    encoding = res.headers["Content-Encoding"]?
-    
     msg = String.build do |s|
       s << "< "
       s << res.version << ' ' << res.status_code << ' '
       s << HTTP.default_status_message_for(res.status_code)
       s << " (" << Pretty.bytes(res.body.to_s.bytesize) << ')'
     end
-    logger.debug(msg, name)
-    logger.debug("encoding: #{encoding.inspect}", name)
+    logger.info(msg, name) if config.verbose?
     logger.debug(res.headers.inspect, name)
-#    logger.debug(res.body, name)
   end
 
   def to_s(io : IO)
