@@ -5,6 +5,7 @@ class Gate::Config < TOML::Config
   str  "logger/path"
   str  "logger/mode"
   str  "logger/level"
+  bool "logger/colorize"
 
   bool "verbose"
 

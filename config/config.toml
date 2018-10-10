@@ -17,3 +17,4 @@ port = 9001
 path  = "STDOUT" # "STDOUT", "STDERR", "/tmp/run.log"
 mode  = "w+"     # "w+", "a+"
 level = "INFO"   # "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
+# colorize = true

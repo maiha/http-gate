@@ -33,6 +33,7 @@ port = 9001
 
 [logger]
 path = "STDOUT"
+colorize = true
 ```
 
 ```console
