@@ -5,7 +5,14 @@ host = "0.0.0.0"
 port = 8080
 
 [[back]]
-path = "/clickhouse"
+type = "static"
+path = "/public"
+dir  = "/var/www/html"
+# autoindex   = true
+remove_path = true
+
+[[back]]
+path = "/ch"
 port = 8123
 remove_path = true
 

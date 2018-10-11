@@ -17,7 +17,7 @@ dependencies:
     version: ">= 0.6.5"
   var:
     github: maiha/var.cr
-    version: ">= 1.1.0"
+    version: ">= 1.2.0"
   opts:
     github: maiha/opts.cr
     version: ">= 0.6.0"

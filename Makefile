@@ -4,7 +4,6 @@ BINARY=bin/http-gate
 VERSION=
 CURRENT_VERSION=$(shell git tag -l | sort -V | tail -1)
 GUESSED_VERSION=$(shell git tag -l | sort -V | tail -1 | awk 'BEGIN { FS="." } { $$3++; } { printf "%d.%d.%d", $$1, $$2, $$3 }')
-OK="\033[1;32mOK\033[0m\n"
 
 .SHELLFLAGS = -o pipefail -c
 
@@ -16,11 +15,14 @@ all:
 static:
 	rm -f ${BINARY}
 	crystal build ${BUILD_FLAGS} src/bin/http-gate.cr -o ${BINARY} --release --link-flags "-static" 
-	LC_ALL=C file ${BINARY} > /dev/null
-	@printf $(OK)
+	@if LC_ALL=C file "${BINARY}" | grep statically > /dev/null; then \
+	  echo -e "static binary: ${BINARY} [\033[1;32mOK\033[0m]\n"; \
+	else \
+	  echo "not static binary: ${BINARY}" >&2; \
+	fi
 
 .PHONY : test
-test: spec
+test: spec static
 
 .PHONY : spec
 spec:

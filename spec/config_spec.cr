@@ -24,7 +24,5 @@ describe Gate::Config do
 
   it "detects backs" do
     config.backs.size.should eq 2
-    config.backs[0].to_s.should eq("127.0.0.1:8123")
-    config.backs[1].to_s.should eq("127.0.0.1:9001")
   end
 end

@@ -11,8 +11,8 @@ Get x86_64 static binary from releases.
 For example, listens '0.0.0.0:8080' and forwards by paths as follows.
 ```
 0.0.0.0:8080
-  /clickhouse/* => 127.0.0.1:8123/*
-  /*            => 127.0.0.1:9001/*
+  /ch/* => 127.0.0.1:8123/*
+  /*    => 127.0.0.1:9001/*
 ```
 
 - [config.toml](./config/config.toml)
@@ -23,7 +23,7 @@ host = "0.0.0.0"
 port = 8080
 
 [[back]]
-path = "/clickhouse"
+path = "/ch"
 port = 8123
 remove_path = true
 
@@ -38,9 +38,28 @@ colorize = true
 
 ```console
 $ http-gate -c config.toml
-I [11:43:30] F Add [Back#0] '/clickhouse/' => 127.0.0.1:8123
-I [11:43:30] F Add [Back#1] '/'            => 127.0.0.1:9001
+I [11:43:30] F Add [Back#0] '/ch/' => 127.0.0.1:8123
+I [11:43:30] F Add [Back#1] '/'    => 127.0.0.1:9001
 I [11:43:30] F Listening on http://0.0.0.0:8080
+```
+
+## Static File
+
+```
+[[back]]
+type = "static"
+path = "/public"
+dir  = "/var/www/html"
+remove_path = true
+```
+
+- `autoindex` is not implemented yet.
+
+## Config
+
+Show a sample of config.
+```console
+$ http-gate --sample
 ```
 
 ## Development

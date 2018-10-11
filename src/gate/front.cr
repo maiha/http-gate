@@ -1,37 +1,40 @@
 class Gate::Front
+  include HTTP::Handler
+  include Helper
+  alias Handlers = Array(HTTP::Handler)
+
   var host     : String
   var port     : Int32
-  var resolver : Radix::Tree(Back) = Radix::Tree(Back).new
+  var resolver : Radix::Tree(Back::Base) = build_resolver
   var logger   : Logger = Logger.new(nil)
   var name     : String = "Front"
-  var config   : Config
-  
-  include Helper
+  var verbose  : Bool   = false
 
-  def backs=(backs : Array(Back))
-    self.resolver = Radix::Tree(Back).new
-    path_size_max = backs.map(&.path.size).max
+  var back_handlers   = Hash(Back::Base, Handlers).new
+  var before_handlers = Handlers.new
+  var after_handlers  = Handlers.new
+  var back_not_found  = Gate::Back::NotFound.new
+  var fallback_handlers : Handlers = before_handlers + [back_not_found] + after_handlers
 
-    backs.each_with_index do |back, i|
-      back.name = "Back##{i}" if back.name == Back.new.name
-      back.logger = logger
-
-      resolver.add("#{back.path}/*", back)
-      resolver.add("#{back.path}/" , back)
-
-      padding = " " * (path_size_max - back.path.size)
-      logger.info("Add [%s] '%s/'%s => %s" % [back.name, back.path, padding, back], name)
-    end
+  def initialize(@config : Config)
+    self.verbose = @config.verbose?
   end
 
-  def resolve?(path : String) : Back?
+  def handlers(path : String) : Handlers
     result = resolver.find(path)
-    result.found? ? result.payload : nil
+    if result.found?
+      back_handlers[result.payload]? || raise "[BUG] back_handlers not found for '#{path}'"
+    else
+      fallback_handlers
+    end
   end
   
   def run
+    # warms up and prevents handlers from concurent initializing
+    handlers("/")
+
     front = HTTP::Server.new do |ctx|
-      do_process(ctx)
+      call(ctx)
     end
 
     front.bind_tcp host, port
@@ -39,14 +42,63 @@ class Gate::Front
     front.listen
   end
 
-  private def do_process(ctx)
-    logger.info("> %s" % inspect_req(ctx.request), name) if config.verbose?
-    req = ctx.request
-    if back = resolve?(req.path)
-      # logger.debug("Back found: #{back}", name)
-      back.process(ctx)
-    else
-      logger.warn("Back not found: '#{req.path}'", name)
+  def call(ctx)
+    logger.info("> %s" % inspect_req(ctx.request), name) if verbose?
+    handlers(ctx.request.path).each do |handler|
+      handler.call(ctx)
     end
+  rescue err : Exception
+    logger.error("< 500 (#{err})", name)
+    logger.debug(err.inspect_with_backtrace, name) if verbose?
+    ctx.response.respond_with_error(err.to_s)
+    ctx.response.flush
+    ctx.response.close
+  end
+
+  private def build_resolver : Radix::Tree(Back::Base)
+    resolver = Radix::Tree(Back::Base).new
+
+    path_size_max = @config.backs.map(&.["path"]?.to_s.size).max
+    @config.backs.each_with_index do |hash, i|
+      path = hash["path"]? || raise ArgumentError.new("Back: missing path: #{hash.inspect}")
+      path = path.to_s.chomp("/")
+      back = build_back_and_handlers(path, hash, i)
+      back.logger = logger
+      resolver.add("#{path}/*", back)
+      resolver.add("#{path}/" , back)
+
+      padding = " " * (path_size_max - path.size)
+      logger.info("Add [%s] '%s/'%s => %s" % [back.name, path, padding, back], name)
+    end
+
+    return resolver
+  end
+
+  # build `Back::Base` and its `back_handlers`
+  private def build_back_and_handlers(path, hash : Hash, i : Int32) : Back::Base
+    handlers = Handlers.new
+    handlers.concat(before_handlers)
+
+    if hash.delete("remove_path")
+      handlers << Back::RemovePath.new(path)
+    end
+
+    hash["name"] ||= "Back##{i}"
+    type = hash.delete("type").to_s.downcase
+    back =
+      case type
+      when "static"
+        Back::Static.new(hash)
+      when "stream", ""
+        Back::Stream.new(hash, @config)
+      else
+        raise ArgumentError.new("unsupported back type: #{type}")
+      end
+    handlers << back.as(HTTP::Handler)
+    handlers.concat(after_handlers)
+    
+    back_handlers[back] = handlers
+
+    return back
   end
 end

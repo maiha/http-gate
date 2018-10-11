@@ -5,6 +5,7 @@ class HttpGate
   include Opts
 
   CONFIG_FILE = "config.toml"
+  CONFIG_SAMPLE = {{ system("cat " + env("PWD") + "/config/config.toml").stringify }}
 
   USAGE = <<-EOF
     Usage: {{program}} [options]
@@ -13,7 +14,8 @@ class HttpGate
     {{options}}
     EOF
 
-  option config_path : String?, "-c <config>", "config file", "config.toml"
+  option config_path : String?, "-c <config>", "Specify the config file", "config.toml"
+  option show_sample : Bool, "--sample", "Print a sample of config", false
   option verbose : Bool  , "-v", "Verbose output", false
   option version : Bool  , "--version", "Print the version and exit", false
   option help    : Bool  , "--help"   , "Output this help and exit" , false
@@ -21,17 +23,20 @@ class HttpGate
   var logger : Logger = Logger.new(STDOUT)
   
   def run
+    if show_sample
+      puts CONFIG_SAMPLE
+      exit
+    end
+
     config = load_config
     config.verbose = true if verbose
     self.logger = config.build_logger
     logger.formatter = build_logger_formatter(config)
 
-    front = Gate::Front.new
+    front = Gate::Front.new(config)
     front.logger = logger
-    front.config = config
     front.host   = config.front_host?
     front.port   = config.front_port?
-    front.backs  = config.backs.tap(&.map(&.config = config))
     front.run
   end     
 
