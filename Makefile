@@ -11,6 +11,10 @@ GUESSED_VERSION=$(shell git tag -l | sort -V | tail -1 | awk 'BEGIN { FS="." } {
 all:
 	shards build
 
+.PHONY : release
+release: static
+	./github_release
+
 .PHONY : static
 static:
 	rm -f ${BINARY}
@@ -22,7 +26,7 @@ static:
 	fi
 
 .PHONY : test
-test: spec static
+test: spec
 
 .PHONY : spec
 spec:

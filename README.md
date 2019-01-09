@@ -89,7 +89,7 @@ $ http-gate --sample
 
 ## Development
 
-- needs crystal-0.26.1
+- needs crystal-0.27.0
 
 ```console
 $ make
