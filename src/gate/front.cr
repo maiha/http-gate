@@ -91,6 +91,8 @@ class Gate::Front
         Back::Static.new(hash)
       when "stream", ""
         Back::Stream.new(hash, @config)
+      when "template"
+        Back::Template.new(hash)
       else
         raise ArgumentError.new("unsupported back type: #{type}")
       end

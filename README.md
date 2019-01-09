@@ -55,6 +55,31 @@ remove_path = true
 
 - `autoindex` is not implemented yet.
 
+## Template File
+
+This just embeds `ENV` and `HTTP::Request::Headers` variables into `{{type:xxx}}`.
+Here, `type` is one of `env` or `req`.
+
+```
+[[back]]
+type = "template"
+dir  = "/var/www/html"
+```
+
+For example, a html file
+
+```
+DIR: {{env:PWD}}
+IP: {{req:X-FORWARDED-IP}}
+```
+
+will be converted to
+
+```
+DIR: /var/www
+IP: 192.168.0.1
+```
+
 ## Config
 
 Show a sample of config.
