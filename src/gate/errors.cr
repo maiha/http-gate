@@ -1,3 +1,4 @@
 module Gate
-  klass Abort < Exception
+  class Abort < Exception
+  end
 end
