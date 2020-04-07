@@ -50,7 +50,7 @@ class Gate::Front
   rescue err : Exception
     logger.error("< 500 (#{err})", name)
     logger.debug(err.inspect_with_backtrace, name) if verbose?
-    ctx.response.respond_with_error(err.to_s)
+    ctx.response.respond_with_status(500, err.to_s)
     ctx.response.flush
     ctx.response.close
   end

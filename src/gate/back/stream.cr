@@ -25,7 +25,7 @@ class Gate::Back::Stream < Gate::Back::Base
   rescue err : Exception
     logger.info("< 500 (#{err})", name) if config.verbose?
     logger.warn(err.to_s, name)
-    ctx.response.respond_with_error(err.to_s)
+    ctx.response.respond_with_status(500, err.to_s)
   ensure
     ctx.response.flush
     ctx.response.close

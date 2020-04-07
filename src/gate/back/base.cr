@@ -14,7 +14,7 @@ abstract class Gate::Back::Base
     msg = String.build do |s|
       s << "< "
       s << res.version << ' ' << res.status_code << ' '
-      s << HTTP.default_status_message_for(res.status_code)
+      s << HTTP::Status.new(res.status_code)
       s << " (" << Pretty.bytes(res.body.to_s.bytesize) << ')'
     end
     logger.info(msg, name) if config.verbose?

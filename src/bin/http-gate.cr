@@ -42,7 +42,7 @@ class HttpGate
 
   private def load_config
     Gate::Config.parse_file(config_path)
-  rescue Errno
+  rescue File::Error
     raise Gate::Abort.new("No such config file '#{config_path}'")
   end
 
