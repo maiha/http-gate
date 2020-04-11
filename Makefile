@@ -7,8 +7,10 @@ GUESSED_VERSION=$(shell git tag -l | sort -V | tail -1 | awk 'BEGIN { FS="." } {
 
 .SHELLFLAGS = -o pipefail -c
 
-.PHONY : all
-all:
+all: build
+
+.PHONY: build
+build:
 	shards build
 
 .PHONY : release
@@ -25,16 +27,12 @@ static:
 	  echo "not static binary: ${BINARY}" >&2; \
 	fi
 
-.PHONY : test
-test: spec
+.PHONY: ci
+ci: build spec
 
 .PHONY : spec
 spec:
 	crystal spec -v --fail-fast
-
-.PHONY : check_version_mismatch
-check_version_mismatch: shard.yml README.md
-	diff -w -c <(grep version: README.md) <(grep ^version: shard.yml)
 
 .PHONY : version
 version:

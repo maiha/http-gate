@@ -1,6 +1,6 @@
 class Gate::Config < TOML::Config
   str  "front/host"
-  int  "front/port"
+  i32  "front/port"
 
   str  "logger/path"
   str  "logger/mode"
