@@ -13,9 +13,24 @@ describe Gate::Back::Template do
     res.body.should eq("foo = req:FOO\nbar = 2\n")
   end
 
-  it "returns 404 when file not found" do
-    res = call(path: "/no-such-file")
-    res.status_code.should eq(404)
+  describe "404" do
+    it "returns 404 when file not found" do
+      res = call(path: "/no-such-file")
+      res.status_code.should eq(404)
+      res.body.chomp.should eq("not found: /no-such-file")
+    end
+
+    it "the filename specified by the 404 option is used as the template" do
+      res = call(path: "/no-such-file", setting: {"404" => "404.html"})
+      res.status_code.should eq(404)
+      res.body.chomp.should eq("404 custom html: /no-such-file")
+    end
+
+    it "fallback to 404 again when the specified 404 file is not found" do
+      res = call(path: "/no-such-file", setting: {"404" => "xxx.html"})
+      res.status_code.should eq(404)
+      res.body.chomp.should eq("not found: /no-such-file")
+    end
   end
 
   it "uses index.html when path not found" do
@@ -27,8 +42,8 @@ describe Gate::Back::Template do
   end
 end
 
-private def call(path : String, headers = Hash(String, String).new) : HTTP::Client::Response
-  setting = { "dir" => File.join(__DIR__, "template") }
+private def call(path : String, setting = Hash(String, String).new, headers = Hash(String, String).new) : HTTP::Client::Response
+  setting["dir"] = File.join(__DIR__, "template")
   back = Gate::Back::Template.new(setting)
 
   io  = IO::Memory.new

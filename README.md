@@ -80,6 +80,29 @@ DIR: /var/www
 IP: 192.168.0.1
 ```
 
+##### 404
+
+If the template file is not found, the filename specified by the 404 option is used as the template.
+If no option is provided, a 404 error will occur.
+
+```
+[[back]]
+type  = "template"
+dir   = "/var/www/html"
+"404" = "404.html"
+```
+
+```
+/var/www/html
+  +-- 404.html
+```
+
+Since the request path is in req:PATH, you can easily create a redirect site by using the following static template file
+
+```html
+Redirecting ... <a href="https://some.example.com{{req:PATH}}">some.example.com{{req:PATH}}</a>
+```
+
 ## Config
 
 Show a sample of config.
