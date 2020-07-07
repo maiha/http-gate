@@ -1,38 +1,46 @@
 SHELL=/bin/bash
 BINARY=bin/http-gate
 
-VERSION=
-CURRENT_VERSION=$(shell git tag -l | sort -V | tail -1)
-GUESSED_VERSION=$(shell git tag -l | sort -V | tail -1 | awk 'BEGIN { FS="." } { $$3++; } { printf "%d.%d.%d", $$1, $$2, $$3 }')
-
 .SHELLFLAGS = -o pipefail -c
+
+COMPILE_FLAGS=-Dstatic
+BUILD_TARGET=
+
+DOCKER=docker run -t -u `id -u`:`id -g` -v $(PWD):/v -w /v --rm crystallang/crystal:0.33.0
 
 all: build
 
 .PHONY: build
 build:
-	shards build
+	$(DOCKER) shards build $(COMPILE_FLAGS) --link-flags "-static" $(BUILD_TARGET) $(O)
 
-.PHONY : release
-release: static
-	./github_release
+.PHONY: http-gate-dev
+http-gate-dev: BUILD_TARGET=http-gate-dev
+http-gate-dev: build
 
-.PHONY : static
-static:
-	rm -f ${BINARY}
-	crystal build ${BUILD_FLAGS} src/bin/http-gate.cr -o ${BINARY} --release --link-flags "-static" 
+.PHONY: http-gate
+http-gate: BUILD_TARGET=--release http-gate
+http-gate: build
+
+.PHONY : github_release
+github_release: bin/http-gate
 	@if LC_ALL=C file "${BINARY}" | grep statically > /dev/null; then \
 	  echo -e "static binary: ${BINARY} [\033[1;32mOK\033[0m]\n"; \
 	else \
 	  echo "not static binary: ${BINARY}" >&2; \
 	fi
+	./github_release
 
 .PHONY: ci
-ci: build spec
+ci: http-gate-dev spec
 
 .PHONY : spec
 spec:
-	crystal spec -v --fail-fast
+	@$(DOCKER) crystal spec -v --fail-fast
+
+VERSION=
+CURRENT_VERSION=$(shell git tag -l | sort -V | tail -1 | sed -e 's/^v//')
+GUESSED_VERSION=$(shell git tag -l | sort -V | tail -1 | awk 'BEGIN { FS="." } { $$3++; } { printf "%d.%d.%d", $$1, $$2, $$3 }')
 
 .PHONY : version
 version:

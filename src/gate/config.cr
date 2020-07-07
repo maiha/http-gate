@@ -20,7 +20,8 @@ class Gate::Config < TOML::Config
     path = logger_path? || raise Abort.new("logger.path is missing")
 
     io = {"STDOUT" => STDOUT, "STDERR" => STDERR}[path]? || File.open(path, mode)
-    io.flush_on_newline = true
+    # Error: undefined method 'flush_on_newline=' for IO::FileDescriptor (compile-time type is IO::FileDescriptor+)
+    # io.flush_on_newline = true
     io.sync = true
                                                                
     logger = Logger.new(io)

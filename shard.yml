@@ -5,6 +5,8 @@ authors:
   - maiha <maiha@wota.jp>
 
 targets:
+  http-gate-dev:
+    main: src/bin/http-gate.cr
   http-gate:
     main: src/bin/http-gate.cr
 
