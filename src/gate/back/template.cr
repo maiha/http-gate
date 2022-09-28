@@ -61,11 +61,23 @@ class Gate::Back::Template < Gate::Back::Base
       key = $2.strip
       val = case src
             when "env"; ENV[key]?
-            when "req"; req.headers[key]? || runtime[key]?
+            when "req"; (key == "*") ? build_all_req_headers_html(req) : (req.headers[key]? || runtime[key]?)
             end
       val || "#{src}:#{key}"
     }
     res.print body
+  end
+
+  private def build_all_req_headers_html(req)
+    String.build do |s|
+      s << "<dl class=request>\n"
+      req.headers.each do |(key, vals)|
+        s << "<dt>%s</dt>" % [HTML.escape(key)]
+        s << "<dd>%s</dd>" % [HTML.escape(vals.inspect)]
+        s << "\n"
+      end
+      s << "</dl>\n"
+    end
   end
 
   def to_s(io : IO)
