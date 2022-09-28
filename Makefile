@@ -22,14 +22,18 @@ http-gate-dev: build
 http-gate: BUILD_TARGET=--release http-gate
 http-gate: build
 
+# https://cli.github.com/manual/gh_release_upload
 .PHONY : github_release
 github_release: bin/http-gate
+ifndef GITHUB_TOKEN
+	$(error Need to set GITHUB_TOKEN; See: https://github.com/settings/tokens)
+endif
 	@if LC_ALL=C file "${BINARY}" | grep statically > /dev/null; then \
 	  echo -e "static binary: ${BINARY} [\033[1;32mOK\033[0m]\n"; \
 	else \
 	  echo "not static binary: ${BINARY}" >&2; \
 	fi
-	./github_release
+	gh release create 'v$(CURRENT_VERSION)' '${BINARY}'
 
 .PHONY: ci
 ci: http-gate-dev spec
